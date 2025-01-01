@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Your OpenAI API key
+API_KEY=""
+
+# Function to send a request to GPT-4o-mini
+send_gpt_request() {
+    # The request text (git diff)
+    prompt="$1"
+    files="$2"
+
+    # Use jq to safely build JSON
+    json_payload=$(jq -n --arg content "$prompt" --arg files "$files" '{
+        model: "gpt-4o-mini",
+        messages: [
+            {role: "user", content: ("Here is a git diff:\n\n" + $content + "\n\nPlease write a concise and meaningful commit message in English, and provide a nice list of modified/added/removed files at the end:\n\n" + $files)}
+        ],
+        max_tokens: 1000
+    }')
+
+    # Send the HTTP POST request to the GPT-4 API with the correct JSON
+    response=$(curl -s https://api.openai.com/v1/chat/completions \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $API_KEY" \
+        -d "$json_payload")
+
+    # Extract the response from JSON
+    echo "$response" | jq -r '.choices[0].message.content'
+}
+
+# Check if we are in a Git repository
+if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+    echo "You are not inside a Git repository."
+    exit 1
+fi
+
+diff=$(git diff --staged)
+
+# Check if there are any changes
+if [ -z "$diff" ]; then
+    echo "No changes to send in 'git diff'."
+    exit 1
+fi
+
+# Get the list of modified, added, and removed files
+files=$(git status --porcelain | awk '{print $2}' | tr '\n' ', ' | sed 's/, $//')
+
+# Send diff to GPT-4o-mini and get the commit message
+commit_message=$(send_gpt_request "$diff" "$files")
+
+# Display the commit message with formatting
+echo "Proposed commit message:"
+echo "----------------------------------"
+echo "$commit_message"
+echo "----------------------------------"
+
+# Try to copy the commit message to the clipboard (if xclip is installed)
+if command -v xclip > /dev/null 2>&1; then
+    echo "$commit_message" | xclip -selection clipboard
+    echo "Commit message has been copied to the clipboard."
+elif command -v xsel > /dev/null 2>&1; then
+    echo "$commit_message" | xsel --clipboard --input
+    echo "Commit message has been copied to the clipboard."
+else
+    echo "No clipboard tool found (xclip or xsel). Install one of them to automatically copy the commit message."
+fi
