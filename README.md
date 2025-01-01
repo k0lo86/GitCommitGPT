@@ -21,11 +21,15 @@ Automate commit message creation with a script that fetches Git diffs, sends the
    ```
 
 3. (Optional) Install clipboard utilities for easier usage:
-   - Install `xclip`:
+   - Install `wl-clipboard` (for Wayland environments):
+     ```bash
+     sudo apt install wl-clipboard
+     ```
+   - Install `xclip` (for X11 environments):
      ```bash
      sudo apt install xclip
      ```
-   - Install `xsel`:
+   - Install `xsel` (alternative for X11):
      ```bash
      sudo apt install xsel
      ```
@@ -47,15 +51,26 @@ Automate commit message creation with a script that fetches Git diffs, sends the
 3. The script will:
    - Check for staged changes.
    - Fetch the `git diff` and generate a meaningful commit message using ChatGPT.
-   - Copy the commit message to the clipboard (if `xclip` or `xsel` is installed).
+   - Copy the commit message to the clipboard (if `wl-clipboard`, `xclip`, or `xsel` is installed).
 
 4. Review and commit the changes:
    ```bash
+   git commit -m "$(wl-paste)"
+   ```
+
+   If using `xclip`:
+   ```bash
    git commit -m "$(xclip -o)"
+   ```
+
+   Or, if using `xsel`:
+   ```bash
+   git commit -m "$(xsel --clipboard --output)"
    ```
 
 ## Dependencies
 
 - Bash
 - Git
-- `xclip` or `xsel` (optional, for clipboard functionality)
+- `wl-clipboard` (for Wayland environments)
+- `xclip` or `xsel` (for X11 environments, optional for clipboard functionality)
