@@ -54,13 +54,19 @@ echo "----------------------------------"
 echo "$commit_message"
 echo "----------------------------------"
 
-# Try to copy the commit message to the clipboard (if xclip is installed)
-if command -v xclip > /dev/null 2>&1; then
+# Try to copy the commit message to the clipboard
+if command -v wl-copy > /dev/null 2>&1; then
+    echo "$commit_message" | wl-copy
+    echo "Commit message has been copied to the clipboard using wl-copy."
+elif command -v xclip > /dev/null 2>&1; then
     echo "$commit_message" | xclip -selection clipboard
-    echo "Commit message has been copied to the clipboard."
+    echo "Commit message has been copied to the clipboard using xclip."
 elif command -v xsel > /dev/null 2>&1; then
     echo "$commit_message" | xsel --clipboard --input
-    echo "Commit message has been copied to the clipboard."
+    echo "Commit message has been copied to the clipboard using xsel."
+elif command -v pbcopy > /dev/null 2>&1; then
+    echo "$commit_message" | pbcopy
+    echo "Commit message has been copied to the clipboard using pbcopy (macOS)."
 else
-    echo "No clipboard tool found (xclip or xsel). Install one of them to automatically copy the commit message."
+    echo "No clipboard tool found (wl-copy, xclip, xsel, or pbcopy). Install one of them to automatically copy the commit message."
 fi
